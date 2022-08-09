@@ -2,7 +2,7 @@
 
 Tired of having to update all the repositories you own to set how you want merges done or enable features like auto-merge?
 
-Me too! That's why I created this command-line tool that:
+Me too! That's why I created `grse` (pronounced 'grease'), the command-line tool that:
 
 1. asks you how you like your settings
 2. scans all your GitHub repos
