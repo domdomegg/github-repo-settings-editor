@@ -2,6 +2,7 @@
 
 import _prompts from 'prompts';
 import { Octokit } from "@octokit/core";
+import { GraphQlQueryResponseData } from '@octokit/graphql';
 
 // Ctrl+c'ing out of a prompt quits the program
 const prompts = ((questions, options) => _prompts(questions, { onCancel: () => { process.exit(1) }, ...options })) as typeof _prompts;
@@ -88,13 +89,18 @@ const getRepositories = async (octokit: Octokit, login: string): Promise<Reposit
   console.log('Getting repositories from GitHub API...')
   const repositories: Repository[] = [];
   let hasNextPage = true;
-  let after: string = undefined!; // FIXME: this is terrible but I've battled TypeScript enough for today
+  let endCursor = null;
   while (hasNextPage) {
-    const page = (await octokit.graphql<{ user: { repositories: {
-      pageInfo: { hasNextPage: boolean, endCursor: string },
-      nodes: Repository[]
-    }}}>(
-      `query ($login: String!, $after: String) {
+    const page: GraphQlQueryResponseData = (
+      await octokit.graphql<{
+        user: {
+          repositories: {
+            pageInfo: { hasNextPage: boolean; endCursor: string };
+            nodes: Repository[];
+          };
+        };
+      }>(
+        `query ($login: String!, $after: String) {
         user(login: $login) {
           repositories(affiliations: [OWNER], first: 100, after: $after) {
             pageInfo {
@@ -118,14 +124,19 @@ const getRepositories = async (octokit: Octokit, login: string): Promise<Reposit
           }
         }
       }`,
-      { login, after }
-    )).user.repositories;
+        {
+          login,
+          after: endCursor,
+        },
+      )
+    ).user.repositories;
 
-    hasNextPage = page.pageInfo.hasNextPage;
-    after = page.pageInfo.endCursor;
     repositories.push(...page.nodes);
+    hasNextPage = page.pageInfo.hasNextPage;
+    endCursor = page.pageInfo.endCursor;
+
   }
-  console.log('Found ' + repositories.length + ' repositories.')
+  console.log('Found ' + repositories.length + ' repositories.');
 
   // A function that allows the user to filter the repositories
   const getSelections: (repos: Repository[]) => Promise<Repository[]> = async (repos) => {

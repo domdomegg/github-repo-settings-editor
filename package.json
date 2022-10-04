@@ -11,6 +11,7 @@
   ],
   "dependencies": {
     "@octokit/core": "^3.5.1",
+    "@octokit/graphql": "^5.0.1",
     "prompts": "^2.4.1"
   },
   "devDependencies": {
