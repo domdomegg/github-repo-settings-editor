@@ -25,15 +25,36 @@ type Preferences = {
   squashMergeAllowed?: boolean,
 }
 
-const getToken = async () => {
+// Prompt the user for a token and return it as a string
+const tokenPrompt = async () => {
   console.log('Create a token at https://github.com/settings/tokens/new?scopes=repo')
-  return (await prompts({
+  const response = await prompts({
     type: 'password',
     name: 'token',
     message: 'GitHub access token:',
-    validate: (value: string) => value.startsWith('ghp_') ? true : 'Your token should start with ghp_',
-  })).token;
-}
+    validate: (value: String) =>
+      value.startsWith('ghp_') ? true : 'Your token should start with ghp_',
+  });
+  return response.token;
+};
+
+// Prompt the user with a choice to use the GITHUB_TOKEN from their environment, or to enter a token
+const getToken = async () => {
+  const { token } = await prompts({
+    type: 'select',
+    name: 'token',
+    message: 'How would you like to authenticate?',
+    choices: [
+      { title: 'Use GITHUB_TOKEN from environment', value: process.env.GITHUB_TOKEN },
+      { title: 'Enter a token', value: tokenPrompt },
+    ],
+  });
+  if (typeof token === 'function') {
+    return token();
+  } else {
+    return token;
+  }
+};
 
 const getLogin = async (octokit: Octokit): Promise<string> => {
   console.log('Logging in...')
@@ -47,6 +68,21 @@ const getLogin = async (octokit: Octokit): Promise<string> => {
   console.log('Logged in as ' + login + '.')
   return login;
 }
+
+// If repoConfig (the file repositories.json) exists, read it and return the list of repositories from the repositories key
+let repoConfig = 'repositories.json'
+const getRepositoriesFromJson = async (): Promise<Repository[]> => {
+  const fs = await import('fs').then(m => m.default);
+  const path = await import('path').then(m => m.default);
+  const repositoriesPath = path.join(process.cwd(), repoConfig);
+  if (fs.existsSync(repositoriesPath)) {
+    const repositories = JSON.parse(fs.readFileSync(repositoriesPath, 'utf8')).repositories;
+    if (repositories) {
+      return repositories;
+    }
+  }
+  return [];
+};
 
 const getRepositories = async (octokit: Octokit, login: string): Promise<Repository[]> => {
   console.log('Getting repositories from GitHub API...')
@@ -68,7 +104,7 @@ const getRepositories = async (octokit: Octokit, login: string): Promise<Reposit
             nodes {
               id
               name
-    
+
               autoMergeAllowed
               deleteBranchOnMerge
               forkingAllowed
@@ -90,8 +126,34 @@ const getRepositories = async (octokit: Octokit, login: string): Promise<Reposit
     repositories.push(...page.nodes);
   }
   console.log('Found ' + repositories.length + ' repositories.')
-  return repositories;
-}
+
+  // A function that allows the user to filter the repositories
+  const getSelections: (repos: Repository[]) => Promise<Repository[]> = async (repos) => {
+    const response = await prompts({      type: 'multiselect',
+      name: 'selectedRepositories',
+      message: 'Which repositories would you like to enforce settings on?',
+      choices: repositories.map(repo => ({ title: repo.name, value: repo })),
+    });
+    console.log('Selected ' + response.selectedRepositories.length + ' repositories.')
+    return response.selectedRepositories;
+  };
+
+  // Ask the user if they want to filter the repositories
+  const { selectRepos } = await prompts({
+    type: 'select',
+    name: 'selectRepos',
+    message: 'Would you like to enforce settings on all repositories?',
+    choices: [
+      { title: 'Yes', value: true },
+      { title: 'No', value: false },
+    ],
+  });
+  if (selectRepos === true) {
+    return repositories;
+  } else {
+    return getSelections(repositories);
+  }
+};
 
 const getPreferences = async (): Promise<Preferences> => {
   console.log('What are your preferred settings?')
@@ -142,7 +204,7 @@ const updateRepositories = async (octokit: Octokit, login: string, repositories:
   return Promise.all(repositories.map(repo => updateRepository(octokit, login, repo, preferences)));
 }
 
-const updateRepository = async (octokit: Octokit, login: string, repository: { name: string }, preferences: Preferences): Promise<void> => {  
+const updateRepository = async (octokit: Octokit, login: string, repository: { name: string }, preferences: Preferences): Promise<void> => {
   await octokit.request('PATCH /repos/{owner}/{repo}', {
     owner: login,
     repo: repository.name,
