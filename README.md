@@ -26,3 +26,13 @@ grse
 ## Limits
 
 Due to rate limits on the [REST](https://docs.github.com/en/rest/overview/resources-in-the-rest-api#rate-limiting) and [GraphQL](https://docs.github.com/en/graphql/overview/resource-limitations#rate-limit) APIs, each hour you are limited to validating 499900 repositories and updating 5000 repositories (15000 if you're a Github Enterprise Cloud user).
+
+## Contributing
+
+1. Clone the [GitHub repository](https://github.com/domdomegg/github-repo-settings-editor)
+2. Install [Node.js](https://nodejs.org/en/download/)
+3. Run `npm install` (to install dependencies)
+4. Run `npm run build` (to build)
+5. RUn `npm start` (to run)
+
+Make edits to the code, then re-run steps 4 and 5 to see your changes.
