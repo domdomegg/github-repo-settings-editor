@@ -33,6 +33,6 @@ Due to rate limits on the [REST](https://docs.github.com/en/rest/overview/resour
 2. Install [Node.js](https://nodejs.org/en/download/)
 3. Run `npm install` (to install dependencies)
 4. Run `npm run build` (to build)
-5. RUn `npm start` (to run)
+5. Run `npm start` (to run)
 
 Make edits to the code, then re-run steps 4 and 5 to see your changes.
