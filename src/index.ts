@@ -2,7 +2,7 @@
 
 import _prompts from 'prompts';
 import { Octokit } from "@octokit/core";
-import { GraphQlQueryResponseData } from '@octokit/graphql';
+import type { GraphQlQueryResponseData } from '@octokit/graphql';
 
 // Ctrl+c'ing out of a prompt quits the program
 const prompts = ((questions, options) => _prompts(questions, { onCancel: () => { process.exit(1) }, ...options })) as typeof _prompts;
