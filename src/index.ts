@@ -32,7 +32,7 @@ const tokenPrompt = async () => {
     type: 'password',
     name: 'token',
     message: 'GitHub access token:',
-    validate: (value: String) =>
+    validate: (value: string) =>
       value.startsWith('ghp_') ? true : 'Your token should start with ghp_',
   });
   return response.token;
