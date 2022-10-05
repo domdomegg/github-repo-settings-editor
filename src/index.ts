@@ -38,22 +38,33 @@ const tokenPrompt = async () => {
   return response.token;
 };
 
+// Check if process.env.GITHUB_TOKEN contains a string starting with 'ghp_'
+const hasToken = (): boolean => {
+  const token = process.env.GITHUB_TOKEN;
+  return token !== undefined && token.startsWith('ghp_');
+};
+
+
 // Prompt the user with a choice to use the GITHUB_TOKEN from their environment, or to enter a token
 const getToken = async () => {
-  const { token } = await prompts({
-    type: 'select',
-    name: 'token',
-    message: 'How would you like to authenticate?',
-    choices: [
-      { title: 'Use GITHUB_TOKEN from environment', value: process.env.GITHUB_TOKEN },
-      { title: 'Enter a token', value: tokenPrompt },
-    ],
+
+  // If hasToken() returns true, ask the user if they want to use the token in their environment, otherwise prompt for a token
+  const { useToken } = await prompts({
+    type: 'confirm',
+    name: 'useToken',
+    message: 'Do you want to use the token in your environment? (GITHUB_TOKEN)',
+    initial: hasToken(),
   });
-  if (typeof token === 'function') {
-    return token();
-  } else {
-    return token;
+
+  // If the user wants to use the token in their environment, return it
+  if (useToken) {
+    return process.env.GITHUB_TOKEN;
   }
+
+  console.log('You can optionally store the token in your environment to avoid entering it next time. (GITHUB_TOKEN)')
+
+  // Otherwise, prompt the user for a token
+  return tokenPrompt();
 };
 
 const getLogin = async (octokit: Octokit): Promise<string> => {
