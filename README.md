@@ -23,6 +23,8 @@ npm i -g github-repo-settings-editor
 grse
 ```
 
+(this will start up an interactive CLI which will prompt you for details before taking any actions)
+
 ## Limits
 
 Due to rate limits on the [REST](https://docs.github.com/en/rest/overview/resources-in-the-rest-api#rate-limiting) and [GraphQL](https://docs.github.com/en/graphql/overview/resource-limitations#rate-limit) APIs, each hour you are limited to validating 499900 repositories and updating 5000 repositories (15000 if you're a Github Enterprise Cloud user).
